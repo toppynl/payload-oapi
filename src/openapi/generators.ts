@@ -102,6 +102,8 @@ const generateSchemaObject = (config: SanitizedConfig, collection: Collection): 
   }
 }
 
+type RequestBodyType = 'post' | 'patch'
+
 const requestBodySchema = (fields: Array<Field>, schema: JSONSchema4): JSONSchema4 => ({
   ...schema,
   properties: Object.fromEntries(
@@ -122,6 +124,7 @@ const requestBodySchema = (fields: Array<Field>, schema: JSONSchema4): JSONSchem
 const generateRequestBodySchema = (
   config: SanitizedConfig,
   collection: Collection,
+  type: RequestBodyType,
 ): OpenAPIV3_1.RequestBodyObject => {
   const schema = entityToJSONSchema(
     config,
@@ -130,6 +133,15 @@ const generateRequestBodySchema = (
     'text',
     undefined,
   )
+
+  schema.required = ((schema.required ?? []) as string[]).filter(
+    property => !['id', 'createdAt', 'updatedAt'].includes(property),
+  )
+
+  if (type === 'patch') {
+    schema.required = []
+  }
+
   return {
     description: collectionName(collection).singular,
     content: {
@@ -461,6 +473,7 @@ const generateCollectionOperations = async (
         operationId: componentName('schemas', singular, { prefix: 'update' }),
         summary: `Update a ${singular}`,
         tags,
+        requestBody: composeRef('requestBodies', singular, { suffix: 'Patch' }),
         responses: singleObjectResponses,
         security: (await isOpenToPublic(collection.config.access.update)) ? [] : [apiKeySecurity],
       },
@@ -588,7 +601,10 @@ const generateComponents = (req: Pick<PayloadRequest, 'payload'>) => {
     requestBodies[componentName('requestBodies', singular)] = generateRequestBodySchema(
       req.payload.config,
       collection,
+      'post',
     )
+    requestBodies[componentName('requestBodies', singular, { suffix: 'Patch' })] =
+      generateRequestBodySchema(req.payload.config, collection, 'patch')
   }
 
   for (const global of req.payload.globals.config) {
