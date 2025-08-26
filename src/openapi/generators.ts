@@ -374,6 +374,7 @@ const generateCollectionOperations = async (
   return {
     [`/api/${slug}`]: {
       get: {
+        operationId: componentName('schemas', plural, { prefix: 'list' }),
         summary: `Retrieve a list of ${plural}`,
         tags,
         parameters: [
@@ -422,6 +423,7 @@ const generateCollectionOperations = async (
         security: (await isOpenToPublic(collection.config.access.read)) ? [] : [apiKeySecurity],
       },
       post: {
+        operationId: componentName('schemas', singular, { prefix: 'create' }),
         summary: `Create a new ${singular}`,
         tags,
         parameters: createQueryParams,
@@ -446,18 +448,24 @@ const generateCollectionOperations = async (
         },
       ],
       get: {
+        operationId: componentName('schemas', singular, {
+          prefix: 'find',
+          suffix: 'ById',
+        }),
         summary: `Find a ${singular} by ID`,
         tags,
         responses: singleObjectResponses,
         security: (await isOpenToPublic(collection.config.access.read)) ? [] : [apiKeySecurity],
       },
       patch: {
+        operationId: componentName('schemas', singular, { prefix: 'update' }),
         summary: `Update a ${singular}`,
         tags,
         responses: singleObjectResponses,
         security: (await isOpenToPublic(collection.config.access.update)) ? [] : [apiKeySecurity],
       },
       delete: {
+        operationId: componentName('schemas', singular, { prefix: 'delete' }),
         summary: `Delete a ${singular}`,
         tags,
         responses: singleObjectResponses,
